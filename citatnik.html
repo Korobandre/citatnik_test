@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Цитатник</title>
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--tx:#1d1b18;--mut:#6d675e;--ac:#b3261e;--ok:#1e7a46;--okbg:#e2f3e8;--bad:#b3261e;--badbg:#fbe4e2;--bd:#ddd7cb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141414;--card:#1f1f1f;--tx:#f1ede6;--mut:#a39d92;--ac:#ef6b60;--ok:#6fd49a;--okbg:#17301f;--bad:#ef6b60;--badbg:#3a1b19;--bd:#333}}
+:root[data-theme="dark"]{--bg:#141414;--card:#1f1f1f;--tx:#f1ede6;--mut:#a39d92;--ac:#ef6b60;--ok:#6fd49a;--okbg:#17301f;--bad:#ef6b60;--badbg:#3a1b19;--bd:#333}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:17px}
+.w{max-width:520px;margin:0 auto;padding:20px 16px 28px}
+h1{font-size:34px;margin:24px 0 8px;letter-spacing:-.5px}
+p{color:var(--mut);line-height:1.45}
+.btn{display:block;width:100%;padding:16px;margin:10px 0;border-radius:14px;border:1.5px solid var(--bd);background:var(--card);color:var(--tx);font-size:17px;text-align:left;cursor:pointer;font-family:inherit}
+.btn.p{background:var(--ac);border-color:var(--ac);color:#fff;text-align:center;font-weight:600}
+.btn.ok{background:var(--okbg);border-color:var(--ok);color:var(--ok);font-weight:600}
+.btn.bad{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
+.btn:disabled{cursor:default}
+.top{display:flex;justify-content:space-between;color:var(--mut);font-size:14px}
+.bar{height:8px;background:var(--bd);border-radius:6px;overflow:hidden;margin:10px 0 18px}
+.bar i{display:block;height:100%;background:var(--ac);width:100%}
+.q{font-size:23px;line-height:1.3;font-weight:600;margin:8px 0 6px}
+.h{color:var(--mut);margin-bottom:14px}
+.fb{margin:14px 0 4px;padding:12px 14px;border-radius:12px;line-height:1.4}
+.fb.ok{background:var(--okbg);color:var(--ok)}.fb.bad{background:var(--badbg);color:var(--bad)}
+.big{font-size:56px;font-weight:700;margin:10px 0 0}
+.row{display:flex;gap:10px}.row .btn{text-align:center}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="w" id="app"></div>
+<script>
+const Q=[
+["«Спокойствие, только спокойствие!»","Кто сказал эту фразу?","Карлсон",["Малыш","Фрекен Бок","Дядя Юлиус"],"«Малыш и Карлсон», 1968"],
+["«Я король мира!»","Из какого фильма эта цитата?","Титаник",["Аватар","Армагеддон","Перл-Харбор"],"Джек Доусон, 1997"],
+["«Всё смешалось в доме …»","Продолжи цитату","Облонских",["Ростовых","Карениных","Болконских"],"Толстой, «Анна Каренина»"],
+["«Нельзя просто так взять и войти в Мордор»","Из какого фильма эта цитата?","Властелин колец",["Гарри Поттер","Хоббит","Хроники Нарнии"],"Боромир, «Братство Кольца»"],
+["«Пилите, Шура, пилите, они золотые»","Из какой книги эта цитата?","Золотой телёнок",["Двенадцать стульев","Собачье сердце","Мёртвые души"],"Ильф и Петров"],
+["«Война никогда не меняется»","Из какой игры эта цитата?","Fallout",["Метро 2033","S.T.A.L.K.E.R.","BioShock"],"Серия Fallout"],
+["«Не жалею, не зову, не плачу, всё пройдёт, как с белых …»","Продолжи цитату","яблонь дым",["вишен дым","яблонь цвет","берёз туман"],"Сергей Есенин, 1921"],
+["«Я не в опасности, Скайлер. Я и есть опасность»","Кто сказал эту фразу?","Уолтер Уайт",["Джесси Пинкман","Сол Гудман","Хэнк Шрейдер"],"«Во все тяжкие», 2008"],
+["«Руссо туристо! Облико морале!»","Из какого фильма эта цитата?","Бриллиантовая рука",["Джентльмены удачи","Операция «Ы»","Иван Васильевич меняет профессию"],"Леонид Гайдай, 1968"],
+["«Быть или не быть, вот в чём вопрос»","Кто сказал эту фразу?","Гамлет",["Отелло","Макбет","Король Лир"],"Шекспир, «Гамлет»"],
+["«Спортсменка, комсомолка, наконец, просто красавица!»","Из какого фильма эта цитата?","Кавказская пленница",["Операция «Ы»","Девчата","Свадьба в Малиновке"],"Леонид Гайдай, 1966"],
+["«Я помню чудное мгновенье: передо мной …»","Продолжи цитату","явилась ты",["стояла ты","предстала ты","возникла ты"],"Пушкин, 1825"],
+["«Ночь, улица, фонарь, аптека»","Кто автор этого стихотворения?","Александр Блок",["Владимир Маяковский","Анна Ахматова","Марина Цветаева"],"Блок, 1912"],
+["«Я твой отец»","Кто сказал эту фразу?","Дарт Вейдер",["Люк Скайуокер","Оби-Ван Кеноби","Император Палпатин"],"«Звёздные войны. Эпизод V»"],
+["«Лишь утратив всё до конца, мы обретаем свободу»","Из какого фильма эта цитата?","Бойцовский клуб",["Американский психопат","Семь","Матрица"],"Тайлер Дёрден, 1999"]
+];
+const T=20, app=document.getElementById('app');
+let i=0,score=0,hits=0,left=T,tm=null,t0=0,locked=false;
+const sh=a=>{a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a};
+function start(){i=0;score=0;hits=0;show()}
+function home(){app.innerHTML='<h1>Цитатник</h1><p>15 цитат. У каждой 20 секунд и 4 варианта. Чем быстрее верный ответ, тем больше очков. Результат видно сразу.</p><button class="btn p" id="go">Играть</button>';document.getElementById('go').onclick=start}
+function show(){
+ const q=Q[i];locked=false;left=T;t0=Date.now();
+ app.innerHTML='<div class="top"><span>Вопрос '+(i+1)+' из '+Q.length+'</span><span>Очки: '+score+'</span></div><div class="bar"><i id="b"></i></div><div class="q">'+q[0]+'</div><div class="h">'+q[1]+'</div><div id="o"></div><div id="f"></div>';
+ const o=document.getElementById('o');
+ sh([q[2]].concat(q[3])).forEach(v=>{const b=document.createElement('button');b.className='btn';b.textContent=v;b.onclick=()=>pick(b,v);o.appendChild(b)});
+ clearInterval(tm);
+ tm=setInterval(()=>{left=Math.max(0,T-(Date.now()-t0)/1000);document.getElementById('b').style.width=(left/T*100)+'%';if(left<=0){clearInterval(tm);if(!locked)pick(null,null)}},100);
+}
+function pick(btn,v){
+ if(locked)return;locked=true;clearInterval(tm);
+ const q=Q[i],good=v===q[2];let gain=0;
+ if(good){gain=100+Math.round(100*left/T);score+=gain;hits++}
+ document.querySelectorAll('#o .btn').forEach(b=>{b.disabled=true;if(b.textContent===q[2])b.classList.add('ok');else if(b===btn)b.classList.add('bad')});
+ const msg=good?'Верно! +'+gain+' очков':(v===null?'Время вышло.':'Неверно.')+' Правильный ответ: '+q[2];
+ document.getElementById('f').innerHTML='<div class="fb '+(good?'ok':'bad')+'">'+msg+'<br><small>'+q[4]+'</small></div><button class="btn p" id="nx">'+(i<Q.length-1?'Дальше':'Результат')+'</button>';
+ document.getElementById('nx').onclick=()=>{i++;i<Q.length?show():end()};
+}
+function end(){
+ const lv=hits>=13?'Знаток цитат':hits>=9?'Уверенный игрок':hits>=5?'Неплохо':'Есть куда расти';
+ app.innerHTML='<div class="top"><span>Игра окончена</span></div><div class="big">'+score+'</div><p>очков · верно '+hits+' из '+Q.length+' · '+lv+'</p><div class="q">Хочешь продолжить играть с новыми цитатами?</div><div class="row"><button class="btn" id="y">Да</button><button class="btn" id="n">Нет</button></div><div id="r"></div><button class="btn p" id="ag">Сыграть ещё раз</button>';
+ document.getElementById('y').onclick=()=>survey('Да');
+ document.getElementById('n').onclick=()=>survey('Нет');
+ document.getElementById('ag').onclick=start;
+}
+const S=[
+["Насколько было интересно?",["1","2","3","4","5"]],
+["Как тебе сложность?",["Слишком легко","В самый раз","Слишком сложно"]],
+["Какой тип вопросов понравился больше всего?",["Кто сказал","Из какого произведения","Продолжи цитату","Кто автор"]],
+["С кем бы играл?",["Один","С друзьями","В большой компании"]],
+["Отправил бы ссылку другу?",["Да","Нет"]]
+];
+function survey(cont){
+ const ans=[];
+ let h='<div class="top"><span>Ты ответил: '+cont+'</span></div><div class="q">Пара вопросов про игру</div>';
+ S.forEach((q,k)=>{h+='<div class="h" style="margin-top:14px">'+q[0]+'</div><div class="row" style="flex-wrap:wrap" data-k="'+k+'">'+q[1].map(o=>'<button class="btn" style="width:auto;flex:1 1 auto;padding:12px">'+o+'</button>').join('')+'</div>'});
+ h+='<div class="h" style="margin-top:14px">Что понравилось, а что улучшить?</div><textarea id="tx" rows="3" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--bd);background:var(--card);color:var(--tx);font:inherit"></textarea><button class="btn p" id="dn">Готово</button><div id="out"></div>';
+ app.innerHTML=h;
+ document.querySelectorAll('[data-k]').forEach(row=>{row.querySelectorAll('button').forEach(b=>{b.onclick=()=>{row.querySelectorAll('button').forEach(x=>x.classList.remove('ok'));b.classList.add('ok');ans[row.dataset.k]=b.textContent}})});
+ document.getElementById('dn').onclick=function(){
+  const t='Цитатник: '+score+' очков, '+hits+' из '+Q.length+'. Продолжить: '+cont+'. '+S.map((q,k)=>q[0]+' '+(ans[k]||'—')).join('. ')+'. Комментарий: '+(document.getElementById('tx').value||'—');
+  document.getElementById('out').innerHTML='<div class="fb ok">Спасибо! Отправь этот результат Андрею.</div><button class="btn" id="cp">Скопировать результат</button><button class="btn p" id="ag2">Сыграть ещё раз</button>';
+  document.getElementById('cp').onclick=function(){const el=this;try{navigator.clipboard.writeText(t).then(()=>el.textContent='Скопировано')}catch(e){el.textContent=t}};
+  document.getElementById('ag2').onclick=start;
+  this.style.display='none';
+ };
+}
+home();
+</script>
+</body>
+</html>
