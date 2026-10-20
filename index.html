@@ -51,9 +51,11 @@ const Q=[
 ["«Лишь утратив всё до конца, мы обретаем свободу»","Из какого фильма эта цитата?","Бойцовский клуб",["Американский психопат","Семь","Матрица"],"Тайлер Дёрден, 1999"]
 ];
 const T=20, app=document.getElementById('app');
-let i=0,score=0,hits=0,left=T,tm=null,t0=0,locked=false;
+let i=0,score=0,hits=0,left=T,tm=null,t0=0,locked=false,log=[];
+const URL_='https://script.google.com/macros/s/AKfycbzLwuBGWdV6G9uV-D9i5VsSzUw1xPQkcOxt_kNuZPZxqwU2x3-L7fxRV6ADGViQt2c-/exec';
+function send(d){try{fetch(URL_,{method:'POST',mode:'no-cors',body:JSON.stringify(d)})}catch(e){}}
 const sh=a=>{a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a};
-function start(){i=0;score=0;hits=0;show()}
+function start(){i=0;score=0;hits=0;log=[];show()}
 function home(){app.innerHTML='<h1>Цитатник</h1><p>15 цитат. У каждой 20 секунд и 4 варианта. Чем быстрее верный ответ, тем больше очков. Результат видно сразу.</p><button class="btn p" id="go">Играть</button>';document.getElementById('go').onclick=start}
 function show(){
  const q=Q[i];locked=false;left=T;t0=Date.now();
@@ -66,6 +68,7 @@ function show(){
 function pick(btn,v){
  if(locked)return;locked=true;clearInterval(tm);
  const q=Q[i],good=v===q[2];let gain=0;
+ log.push((i+1)+':'+(good?1:0)+':'+((Date.now()-t0)/1000).toFixed(1));
  if(good){gain=100+Math.round(100*left/T);score+=gain;hits++}
  document.querySelectorAll('#o .btn').forEach(b=>{b.disabled=true;if(b.textContent===q[2])b.classList.add('ok');else if(b===btn)b.classList.add('bad')});
  const msg=good?'Верно! +'+gain+' очков':(v===null?'Время вышло.':'Неверно.')+' Правильный ответ: '+q[2];
@@ -88,6 +91,7 @@ const S=[
 ];
 function survey(cont){
  const ans=[];
+ send({score:score,hits:hits,cont:cont,comment:'(только Да/Нет)',details:log.join('|')});
  let h='<div class="top"><span>Ты ответил: '+cont+'</span></div><div class="q">Пара вопросов про игру</div>';
  S.forEach((q,k)=>{h+='<div class="h" style="margin-top:14px">'+q[0]+'</div><div class="row" style="flex-wrap:wrap" data-k="'+k+'">'+q[1].map(o=>'<button class="btn" style="width:auto;flex:1 1 auto;padding:12px">'+o+'</button>').join('')+'</div>'});
  h+='<div class="h" style="margin-top:14px">Что понравилось, а что улучшить?</div><textarea id="tx" rows="3" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--bd);background:var(--card);color:var(--tx);font:inherit"></textarea><button class="btn p" id="dn">Готово</button><div id="out"></div>';
@@ -95,7 +99,8 @@ function survey(cont){
  document.querySelectorAll('[data-k]').forEach(row=>{row.querySelectorAll('button').forEach(b=>{b.onclick=()=>{row.querySelectorAll('button').forEach(x=>x.classList.remove('ok'));b.classList.add('ok');ans[row.dataset.k]=b.textContent}})});
  document.getElementById('dn').onclick=function(){
   const t='Цитатник: '+score+' очков, '+hits+' из '+Q.length+'. Продолжить: '+cont+'. '+S.map((q,k)=>q[0]+' '+(ans[k]||'—')).join('. ')+'. Комментарий: '+(document.getElementById('tx').value||'—');
-  document.getElementById('out').innerHTML='<div class="fb ok">Спасибо! Отправь этот результат Андрею.</div><button class="btn" id="cp">Скопировать результат</button><button class="btn p" id="ag2">Сыграть ещё раз</button>';
+  send({score:score,hits:hits,cont:cont,interest:ans[0]||'',difficulty:ans[1]||'',fav:ans[2]||'',who:ans[3]||'',share:ans[4]||'',comment:document.getElementById('tx').value||'',details:'опрос'});
+  document.getElementById('out').innerHTML='<div class="fb ok">Спасибо! Ответы отправлены.</div><button class="btn" id="cp">Скопировать результат</button><button class="btn p" id="ag2">Сыграть ещё раз</button>';
   document.getElementById('cp').onclick=function(){const el=this;try{navigator.clipboard.writeText(t).then(()=>el.textContent='Скопировано')}catch(e){el.textContent=t}};
   document.getElementById('ag2').onclick=start;
   this.style.display='none';
