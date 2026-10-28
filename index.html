@@ -27,57 +27,97 @@ p{color:var(--mut);line-height:1.45}
 .fb.ok{background:var(--okbg);color:var(--ok)}.fb.bad{background:var(--badbg);color:var(--bad)}
 .big{font-size:56px;font-weight:700;margin:10px 0 0}
 .row{display:flex;gap:10px}.row .btn{text-align:center}
-.hide{display:none}
 </style>
 </head>
 <body>
 <div class="w" id="app"></div>
 <script>
-const Q=[
-["«Спокойствие, только спокойствие!»","Кто сказал эту фразу?","Карлсон",["Малыш","Фрекен Бок","Дядя Юлиус"],"«Малыш и Карлсон», 1968"],
-["«Я король мира!»","Из какого фильма эта цитата?","Титаник",["Аватар","Армагеддон","Перл-Харбор"],"Джек Доусон, 1997"],
-["«Всё смешалось в доме …»","Продолжи цитату","Облонских",["Ростовых","Карениных","Болконских"],"Толстой, «Анна Каренина»"],
-["«Нельзя просто так взять и войти в Мордор»","Из какого фильма эта цитата?","Властелин колец",["Гарри Поттер","Хоббит","Хроники Нарнии"],"Боромир, «Братство Кольца»"],
-["«Пилите, Шура, пилите, они золотые»","Из какой книги эта цитата?","Золотой телёнок",["Двенадцать стульев","Собачье сердце","Мёртвые души"],"Ильф и Петров"],
-["«Война никогда не меняется»","Из какой игры эта цитата?","Fallout",["Метро 2033","S.T.A.L.K.E.R.","BioShock"],"Серия Fallout"],
-["«Не жалею, не зову, не плачу, всё пройдёт, как с белых …»","Продолжи цитату","яблонь дым",["вишен дым","яблонь цвет","берёз туман"],"Сергей Есенин, 1921"],
-["«Я не в опасности, Скайлер. Я и есть опасность»","Кто сказал эту фразу?","Уолтер Уайт",["Джесси Пинкман","Сол Гудман","Хэнк Шрейдер"],"«Во все тяжкие», 2008"],
-["«Руссо туристо! Облико морале!»","Из какого фильма эта цитата?","Бриллиантовая рука",["Джентльмены удачи","Операция «Ы»","Иван Васильевич меняет профессию"],"Леонид Гайдай, 1968"],
-["«Быть или не быть, вот в чём вопрос»","Кто сказал эту фразу?","Гамлет",["Отелло","Макбет","Король Лир"],"Шекспир, «Гамлет»"],
-["«Спортсменка, комсомолка, наконец, просто красавица!»","Из какого фильма эта цитата?","Кавказская пленница",["Операция «Ы»","Девчата","Свадьба в Малиновке"],"Леонид Гайдай, 1966"],
-["«Я помню чудное мгновенье: передо мной …»","Продолжи цитату","явилась ты",["стояла ты","предстала ты","возникла ты"],"Пушкин, 1825"],
-["«Ночь, улица, фонарь, аптека»","Кто автор этого стихотворения?","Александр Блок",["Владимир Маяковский","Анна Ахматова","Марина Цветаева"],"Блок, 1912"],
-["«Я твой отец»","Кто сказал эту фразу?","Дарт Вейдер",["Люк Скайуокер","Оби-Ван Кеноби","Император Палпатин"],"«Звёздные войны. Эпизод V»"],
-["«Лишь утратив всё до конца, мы обретаем свободу»","Из какого фильма эта цитата?","Бойцовский клуб",["Американский психопат","Семь","Матрица"],"Тайлер Дёрден, 1999"]
-];
-const T=20, app=document.getElementById('app');
-let i=0,score=0,hits=0,left=T,tm=null,t0=0,locked=false,log=[];
-const URL_='https://script.google.com/macros/s/AKfycbzLwuBGWdV6G9uV-D9i5VsSzUw1xPQkcOxt_kNuZPZxqwU2x3-L7fxRV6ADGViQt2c-/exec';
-function send(d){try{fetch(URL_,{method:'POST',mode:'no-cors',body:JSON.stringify(d)})}catch(e){}}
+const SB='https://mpkfsnjqetgiyngbaekp.supabase.co/rest/v1',KEY='sb_publishable_Z8uH-q09gkZ0KGiPBxtZJA_7tTRI4aO';
+const H={apikey:KEY};
+const T=20,N=15,app=document.getElementById('app');
+let QUOTES=[],WORKS=[],WM={},G=[],i=0,score=0,hits=0,left=T,tm=null,t0=0,locked=false,log=[];
 const sh=a=>{a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a};
-function start(){i=0;score=0;hits=0;log=[];show()}
-function home(){app.innerHTML='<h1>Цитатник</h1><p>15 цитат. У каждой 20 секунд и 4 варианта. Чем быстрее верный ответ, тем больше очков. Результат видно сразу.</p><button class="btn p" id="go">Играть</button>';document.getElementById('go').onclick=start}
+const uniq=a=>[...new Set(a)];
+function pid(){try{let p=localStorage.getItem('pid');if(!p){p=Math.random().toString(36).slice(2,10);localStorage.setItem('pid',p)}return p}catch(e){return'anon'}}
+function save(row){try{row.player_id=pid();fetch(SB+'/results',{method:'POST',headers:Object.assign({'Content-Type':'application/json',Prefer:'return=minimal'},H),body:JSON.stringify(row)})}catch(e){}}
+async function load(){
+ app.innerHTML='<h1>Цитатник</h1><p>Загружаю вопросы…</p>';
+ try{
+  const [q,w]=await Promise.all([
+   fetch(SB+'/quotes?select=id,text,speaker,difficulty,work_id&active=eq.true',{headers:H}).then(r=>r.json()),
+   fetch(SB+'/works?select=id,title,type,year,director,author',{headers:H}).then(r=>r.json())]);
+  if(!Array.isArray(q)||!Array.isArray(w))throw 0;
+  QUOTES=q;WORKS=w;WM={};w.forEach(o=>WM[o.id]=o);home();
+ }catch(e){app.innerHTML='<h1>Цитатник</h1><p>Не получилось загрузить вопросы. Проверь интернет и попробуй ещё раз.</p><button class="btn p" id="rt">Повторить</button>';document.getElementById('rt').onclick=load}
+}
+const LBL={'фильм':'Из какого фильма','сериал':'Из какого сериала','мультфильм':'Из какого мультфильма','книга':'Из какой книги','стих':'Из какого стихотворения','игра':'Из какой игры'};
+function pick3(c,w){
+ const y=w.year||2000;
+ c=c.slice().sort((a,b)=>Math.abs((a.year||y)-y)-Math.abs((b.year||y)-y)).slice(0,8);
+ return sh(c).slice(0,3);
+}
+function srcQ(x,w){
+ if(!LBL[w.type])return null;
+ const ok=o=>o.id!==w.id&&o.title!==w.title&&!(w.director&&o.director===w.director);
+ let c=WORKS.filter(o=>ok(o)&&o.type===w.type);
+ if(c.length<3&&(w.type==='фильм'||w.type==='мультфильм'))c=WORKS.filter(o=>ok(o)&&(o.type==='фильм'||o.type==='мультфильм'));
+ if(c.length<3)return null;
+ return {kind:'source',prompt:LBL[w.type]+' эта цитата?',correct:w.title,wrong:pick3(c,w).map(o=>o.title)};
+}
+function whoQ(x,w){
+ if(!x.speaker)return null;
+ const grp=(w.type==='книга')?['книга']:['фильм','сериал','мультфильм'];
+ if(!grp.includes(w.type))return null;
+ const s=uniq(QUOTES.filter(o=>o.speaker&&o.speaker!==x.speaker&&grp.includes((WM[o.work_id]||{}).type)).map(o=>o.speaker));
+ if(s.length<3)return null;
+ return {kind:'who',prompt:'Кто сказал эту фразу?',correct:x.speaker,wrong:sh(s).slice(0,3)};
+}
+function authQ(x,w){
+ if(!w.author||(w.type!=='книга'&&w.type!=='стих'))return null;
+ const a=uniq(WORKS.filter(o=>(o.type==='книга'||o.type==='стих')&&o.author&&o.author!==w.author).map(o=>o.author));
+ if(a.length<3)return null;
+ return {kind:'author',prompt:(w.type==='стих'?'Кто автор этого стихотворения?':'Кто автор этой книги?'),correct:w.author,wrong:sh(a).slice(0,3)};
+}
+function makeQ(x){
+ const w=WM[x.work_id];if(!w)return null;
+ const c=[[srcQ(x,w),5],[whoQ(x,w),3],[authQ(x,w),2]].filter(a=>a[0]);
+ if(!c.length)return null;
+ let r=Math.random()*c.reduce((s,a)=>s+a[1],0),k=0;
+ while(r>c[k][1]&&k<c.length-1){r-=c[k][1];k++}
+ const q=c[k][0];
+ return Object.assign(q,{id:x.id,d:x.difficulty||2,text:x.text,f:w.title+(w.year?', '+w.year:''),opts:sh([q.correct].concat(q.wrong))});
+}
+function build(){
+ const used=new Set(),out=[];
+ for(const x of sh(QUOTES)){
+  if(out.length>=N)break;if(used.has(x.work_id))continue;
+  const q=makeQ(x);if(q){out.push(q);used.add(x.work_id)}
+ }
+ return out.sort((a,b)=>a.d-b.d);
+}
+function home(){app.innerHTML='<h1>Цитатник</h1><p>'+N+' цитат. У каждой 20 секунд и 4 варианта. Чем быстрее верный ответ, тем больше очков. Результат видно сразу.</p><button class="btn p" id="go">Играть</button>';document.getElementById('go').onclick=start}
+function start(){G=build();i=0;score=0;hits=0;log=[];if(!G.length){app.innerHTML='<p>Пока нет вопросов.</p>';return}show()}
 function show(){
- const q=Q[i];locked=false;left=T;t0=Date.now();
- app.innerHTML='<div class="top"><span>Вопрос '+(i+1)+' из '+Q.length+'</span><span>Очки: '+score+'</span></div><div class="bar"><i id="b"></i></div><div class="q">'+q[0]+'</div><div class="h">'+q[1]+'</div><div id="o"></div><div id="f"></div>';
+ const q=G[i];locked=false;left=T;t0=Date.now();
+ app.innerHTML='<div class="top"><span>Вопрос '+(i+1)+' из '+G.length+'</span><span>Очки: '+score+'</span></div><div class="bar"><i id="b"></i></div><div class="q">«'+q.text+'»</div><div class="h">'+q.prompt+'</div><div id="o"></div><div id="f"></div>';
  const o=document.getElementById('o');
- sh([q[2]].concat(q[3])).forEach(v=>{const b=document.createElement('button');b.className='btn';b.textContent=v;b.onclick=()=>pick(b,v);o.appendChild(b)});
+ q.opts.forEach(v=>{const b=document.createElement('button');b.className='btn';b.textContent=v;b.onclick=()=>pick(b,v);o.appendChild(b)});
  clearInterval(tm);
  tm=setInterval(()=>{left=Math.max(0,T-(Date.now()-t0)/1000);document.getElementById('b').style.width=(left/T*100)+'%';if(left<=0){clearInterval(tm);if(!locked)pick(null,null)}},100);
 }
 function pick(btn,v){
  if(locked)return;locked=true;clearInterval(tm);
- const q=Q[i],good=v===q[2];let gain=0;
- log.push((i+1)+':'+(good?1:0)+':'+((Date.now()-t0)/1000).toFixed(1));
+ const q=G[i],good=v===q.correct;let gain=0;
+ log.push({q:q.id,t:q.kind,ok:good?1:0,s:+((Date.now()-t0)/1000).toFixed(1),a:v});
  if(good){gain=100+Math.round(100*left/T);score+=gain;hits++}
- document.querySelectorAll('#o .btn').forEach(b=>{b.disabled=true;if(b.textContent===q[2])b.classList.add('ok');else if(b===btn)b.classList.add('bad')});
- const msg=good?'Верно! +'+gain+' очков':(v===null?'Время вышло.':'Неверно.')+' Правильный ответ: '+q[2];
- document.getElementById('f').innerHTML='<div class="fb '+(good?'ok':'bad')+'">'+msg+'<br><small>'+q[4]+'</small></div><button class="btn p" id="nx">'+(i<Q.length-1?'Дальше':'Результат')+'</button>';
- document.getElementById('nx').onclick=()=>{i++;i<Q.length?show():end()};
+ document.querySelectorAll('#o .btn').forEach(b=>{b.disabled=true;if(b.textContent===q.correct)b.classList.add('ok');else if(b===btn)b.classList.add('bad')});
+ const msg=good?'Верно! +'+gain+' очков':(v===null?'Время вышло.':'Неверно.')+' Правильный ответ: '+q.correct;
+ document.getElementById('f').innerHTML='<div class="fb '+(good?'ok':'bad')+'">'+msg+'<br><small>'+q.f+'</small></div><button class="btn p" id="nx">'+(i<G.length-1?'Дальше':'Результат')+'</button>';
+ document.getElementById('nx').onclick=()=>{i++;i<G.length?show():end()};
 }
 function end(){
  const lv=hits>=13?'Знаток цитат':hits>=9?'Уверенный игрок':hits>=5?'Неплохо':'Есть куда расти';
- app.innerHTML='<div class="top"><span>Игра окончена</span></div><div class="big">'+score+'</div><p>очков · верно '+hits+' из '+Q.length+' · '+lv+'</p><div class="q">Хочешь продолжить играть с новыми цитатами?</div><div class="row"><button class="btn" id="y">Да</button><button class="btn" id="n">Нет</button></div><div id="r"></div><button class="btn p" id="ag">Сыграть ещё раз</button>';
+ app.innerHTML='<div class="top"><span>Игра окончена</span></div><div class="big">'+score+'</div><p>очков · верно '+hits+' из '+G.length+' · '+lv+'</p><div class="q">Хочешь продолжить играть с новыми цитатами?</div><div class="row"><button class="btn" id="y">Да</button><button class="btn" id="n">Нет</button></div><button class="btn p" id="ag">Сыграть ещё раз</button>';
  document.getElementById('y').onclick=()=>survey('Да');
  document.getElementById('n').onclick=()=>survey('Нет');
  document.getElementById('ag').onclick=start;
@@ -85,28 +125,26 @@ function end(){
 const S=[
 ["Насколько было интересно?",["1","2","3","4","5"]],
 ["Как тебе сложность?",["Слишком легко","В самый раз","Слишком сложно"]],
-["Какой тип вопросов понравился больше всего?",["Кто сказал","Из какого произведения","Продолжи цитату","Кто автор"]],
+["Какой тип вопросов понравился больше всего?",["Кто сказал","Из какого произведения","Кто автор"]],
 ["С кем бы играл?",["Один","С друзьями","В большой компании"]],
 ["Отправил бы ссылку другу?",["Да","Нет"]]
 ];
 function survey(cont){
  const ans=[];
- send({score:score,hits:hits,cont:cont,comment:'(только Да/Нет)',details:log.join('|')});
+ save({score:score,hits:hits,wants_more:cont,comment:'(только Да/Нет)',details:JSON.stringify(log)});
  let h='<div class="top"><span>Ты ответил: '+cont+'</span></div><div class="q">Пара вопросов про игру</div>';
  S.forEach((q,k)=>{h+='<div class="h" style="margin-top:14px">'+q[0]+'</div><div class="row" style="flex-wrap:wrap" data-k="'+k+'">'+q[1].map(o=>'<button class="btn" style="width:auto;flex:1 1 auto;padding:12px">'+o+'</button>').join('')+'</div>'});
  h+='<div class="h" style="margin-top:14px">Что понравилось, а что улучшить?</div><textarea id="tx" rows="3" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--bd);background:var(--card);color:var(--tx);font:inherit"></textarea><button class="btn p" id="dn">Готово</button><div id="out"></div>';
  app.innerHTML=h;
  document.querySelectorAll('[data-k]').forEach(row=>{row.querySelectorAll('button').forEach(b=>{b.onclick=()=>{row.querySelectorAll('button').forEach(x=>x.classList.remove('ok'));b.classList.add('ok');ans[row.dataset.k]=b.textContent}})});
  document.getElementById('dn').onclick=function(){
-  const t='Цитатник: '+score+' очков, '+hits+' из '+Q.length+'. Продолжить: '+cont+'. '+S.map((q,k)=>q[0]+' '+(ans[k]||'—')).join('. ')+'. Комментарий: '+(document.getElementById('tx').value||'—');
-  send({score:score,hits:hits,cont:cont,interest:ans[0]||'',difficulty:ans[1]||'',fav:ans[2]||'',who:ans[3]||'',share:ans[4]||'',comment:document.getElementById('tx').value||'',details:'опрос'});
-  document.getElementById('out').innerHTML='<div class="fb ok">Спасибо! Ответы отправлены.</div><button class="btn" id="cp">Скопировать результат</button><button class="btn p" id="ag2">Сыграть ещё раз</button>';
-  document.getElementById('cp').onclick=function(){const el=this;try{navigator.clipboard.writeText(t).then(()=>el.textContent='Скопировано')}catch(e){el.textContent=t}};
+  save({score:score,hits:hits,wants_more:cont,interest:parseInt(ans[0])||null,difficulty:ans[1]||null,fav_type:ans[2]||null,play_with:ans[3]||null,would_share:ans[4]||null,comment:document.getElementById('tx').value||null,details:'опрос'});
+  document.getElementById('out').innerHTML='<div class="fb ok">Спасибо! Ответы отправлены.</div><button class="btn p" id="ag2">Сыграть ещё раз</button>';
   document.getElementById('ag2').onclick=start;
   this.style.display='none';
  };
 }
-home();
+load();
 </script>
 </body>
 </html>
